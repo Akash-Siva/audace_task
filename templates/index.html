@@ -108,7 +108,7 @@
     <div class="tooltip"></div>
 
     <div class="input-row">
-        <h3>Daily Averages</h3>
+        <h3>Metrics</h3>
         <div class="input-col">
             <label for="avgPrice">Average Price: </label>
             <input type="text" id="avgPrice" name="avgPrice">
@@ -250,16 +250,17 @@
         function fetchData() {
             const timeframe = $("#timeframe").val();
             $.ajax({
-                url: `/chart/`,
+                url: `{% url 'render_chart' %}`,
                 data: {},
                 success: function(response) {
                     updateChart(JSON.parse(response.chart_data));
                     $('#avgPrice').val(response.averages.total_price + '₹');
-                    $('#avgLiquidity').val(response.averages.avg_liquidity);  // Ensure this key exists in your response
+                    $('#avgLiquidity').val(response.averages.avg_liquidity); 
                     $('#avgVolume').val(response.averages.avg_volume);
                 },
                 error: function(xhr, status, error) {
                     console.error("Error fetching data:", error);
+                    window.location.href = `{% url 'render_error' %}`;
                 }
             });
         }

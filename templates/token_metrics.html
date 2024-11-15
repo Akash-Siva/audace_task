@@ -47,16 +47,15 @@
         }
 
         .legend {
-                margin-top: 20px;  /* Add some space between chart and legend */
-                text-align: center;   /* Align text to the left */
-                font-size: 14px;    /* Adjust font size */
+                margin-top: 20px;  
+                text-align: center;   
+                font-size: 14px;   
                 display: flex;
                 justify-content: center;
             }
 
-            /* Optional: Additional styling for better alignment */
             .legend p {
-                margin: 5px 0;      /* Add some spacing between the legend items */
+                margin: 5px 0;  
             }
 
         .red {
@@ -248,9 +247,9 @@
         location.href = "{% url 'render_index' %}";
     };
 
-        // Fetch data from the API
         function fetchData() {
-            const url = "{% url 'token_metrics' %}"; // Replace with your API URL
+            const url = "{% url 'token_metrics' %}"; 
+            const errorPageUrl = "{% url 'render_error' %}";
 
             fetch(url)
                 .then(response => response.json())
@@ -258,7 +257,11 @@
                     const parsedData = JSON.parse(data.chart_data);
                     updateChart(parsedData);
                 })
-                .catch(error => console.error("Error fetching data:", error));
+                .catch(error => {
+            console.error("Error fetching data:", error);
+            // Redirect to the error page in case of other errors
+            window.location.href = errorPageUrl;
+        });
         }
 
         // Initialize chart

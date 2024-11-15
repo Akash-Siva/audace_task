@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Page</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        p {
+            margin-top: 20px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .home-button {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        #button {
+            background-color: #FF5722;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 16px;
+            }
+
+    </style>
+</head>
+<body>
+    <img src="{% static 'images/error2.jpg' %}" alt="Error">
+    <p>Sorry, unable to fetch data at the moment. Try within a few minutes.</p>
+
+    <div class="row home-button">
+        <button id="button">Return Home</button>
+    </div>
+
+    <script>
+        document.getElementById("button").onclick = function () {
+        location.href = "{% url 'render_index' %}";
+    };
+    </script>
+</body>
+</html>

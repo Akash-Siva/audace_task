@@ -1,0 +1,78 @@
+Here is your updated submission with additional points for starting the required services like **Redis** and **Celery**:
+
+---
+
+### **Submission for Audace Task**
+
+Hi members of Audace,
+
+This is my submission for the task assigned to me. The task details can be found in the `task.txt` file. I have created an **Automated Data Pipeline and Analysis for On-Chain Metrics** using the following technologies:
+- Python
+- Django
+- Redis
+- Celery
+- HTML, CSS
+- AJAX, JavaScript
+- D3 for line chart creation
+
+**Scalability Considerations:**
+- The application is designed to handle real-time data fetching, processing, and analysis. I have used **Celery** for background task management to ensure that data fetching and processing are done asynchronously, minimizing delay and ensuring scalability for high-frequency data updates.
+- The data pipeline can scale horizontally to handle large volumes of on-chain metrics, thanks to the use of **Redis** as a message broker for task queuing and real-time data processing.
+- For real-time chart updates, **D3.js** is used to create dynamic line charts that can be updated seamlessly as new data is processed. This allows for smooth, scalable visualization of large datasets.
+- **Real-time Alerts**: The application includes an email notification system that triggers an alert when the threshold exceeds 5%, ensuring timely updates and actions.
+
+### **Setup Instructions for Linux Environment:**
+
+1. **Create a project directory:**
+
+   mkdir audace
+   cd audace
+
+2. **Set up a virtual environment:**
+
+   python3 -m venv venv
+   source venv/bin/activate
+
+3. **Clone the project repository:**
+
+   git clone https://github.com/Akash-Siva/audace_task.git
+   cd audace_task
+
+4. **Install the required dependencies:**
+
+   pip install -r requirements.txt
+
+5. **Start the Redis server:**
+   Before running the Celery tasks, you need to have Redis running. In a new terminal window, start the Redis server:
+
+   redis-server
+
+6. **Start the Celery worker process:**
+   In another terminal window, run the following command to start the Celery worker:
+
+   celery -A onchain_tracker worker -l info
+
+7. **Start the Celery beat process:**
+   In a third terminal window, run the following command to start the Celery beat process (this will handle periodic tasks):
+
+   celery -A onchain_tracker beat -l info
+
+8. **Start the development server:**
+   In the original terminal window, run the Django development server:
+
+   python manage.py runserver
+
+With these steps, the application should be up and running. I have included all necessary folders, including the database, to simplify the setup process. There is no need to run migrations.
+
+### **Accessing the Application:**
+- The application will be available at: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- The admin panel can be accessed at: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+    - **Admin Username**: ash
+    - **Admin Password**: 1
+
+Under the **Token Datas** section, you will find all the queried data.
+
+### **Email Notifications:**
+I have also set up email services to notify when the threshold exceeds 5%. An image of the email alert is attached.
+
+This update includes the necessary commands for starting **Redis**, **Celery worker**, and **Celery beat**. Make sure these services are running in separate terminals to ensure smooth operation of the application and its background tasks.
