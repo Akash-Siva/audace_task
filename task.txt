@@ -1,0 +1,38 @@
+Task: Automated Data Pipeline and Analysis for On-Chain Metrics
+Objective:
+Create an automated Python script to fetch, analyze, and visualize on-chain metrics for specific token pairs on Uniswap. 
+The script should track real-time price movements and calculate liquidity and volume for a given token pair, as well as integrate 
+alerts when significant price or volume changes occur.
+
+Requirements:
+
+Data Fetching and Processing:
+
+Set up API integrations with Uniswap’s subgraph or another reliable on-chain data provider to fetch real-time data for a specific token pair.
+Pull data for the last 24 hours, including price, volume, and liquidity metrics, and store it in a structured format for analysis.
+Include error handling to manage issues with API downtime or response errors.
+Real-Time Monitoring & Alerts:
+
+Implement a monitoring system that tracks price movements at a set interval (e.g., every 5 minutes) and calculates any 
+significant changes over the last interval.
+Set up an alert system (via email or SMS) to trigger notifications for price changes exceeding a 
+threshold (e.g., 5%) or when liquidity falls below a certain level.
+Data Analysis & Visualization:
+
+Calculate daily average price, volume, and liquidity for the token pair.
+Generate a line chart for price and volume changes over the 24-hour period.
+Provide a summary of key metrics in a formatted output, including any unusual price spikes or dips.
+Deliverables:
+
+A Python script (well-documented and modular) that:
+Fetches real-time on-chain data for a token pair.
+Monitors and alerts on price and liquidity changes.
+Analyzes and visualizes data with charts for easy interpretation.
+A README file with setup instructions, usage guidelines, and potential improvements for scalability or additional functionality.
+
+Evaluation Criteria:
+
+Code quality, modularity, and readability.
+Ability to handle real-time data efficiently.
+Correctness and clarity of the analysis and visualizations.
+Robustness of error handling and alerting mechanisms.

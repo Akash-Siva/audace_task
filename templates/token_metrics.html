@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Spikes and Dips Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .heading {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            width: 800px;
+            height: 400px;
+            margin: 20px auto;
+        }
+        .line {
+            fill: none;
+            stroke: #2196F3;
+            stroke-width: 2;
+        }
+        .axis {
+            font-size: 12px;
+        }
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .data-point {
+            fill: #2196F3;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 1000;
+        }
+
+        .legend {
+                margin-top: 20px;  /* Add some space between chart and legend */
+                text-align: center;   /* Align text to the left */
+                font-size: 14px;    /* Adjust font size */
+                display: flex;
+                justify-content: center;
+            }
+
+            /* Optional: Additional styling for better alignment */
+            .legend p {
+                margin: 5px 0;      /* Add some spacing between the legend items */
+            }
+
+        .red {
+            height: 5px;
+            width: 5px;
+            border-radius: 50%;
+            background-color: #FF5722;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .blue {
+            height: 5px;
+            width: 5px;
+            border-radius: 50%;
+            background-color: #2196F3;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .metrics-button {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: right;
+            margin-top: 50px;
+        }
+
+        #button {
+            background-color: #FF5722;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 16px;
+            }
+
+    </style>
+</head>
+<body>
+    <div class="heading"><h1>Audace - Key metrics</h1></div>
+
+    <div class="row metrics-button">
+        <button id="button">Metrics chart</button>
+    </div>
+
+    <div id="chart" class="chart-container"></div>
+    <div class="tooltip"></div>
+    <div class="legend">
+        <p>Price spike: <span class="dot blue"></span></p>
+        <p>Price dip: <span class="dot red"></span></p>
+    </div>
+    <script>
+
+        // Set up chart dimensions
+        const margin = {top: 20, right: 30, bottom: 30, left: 70};
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+        
+        // Create SVG canvas
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create scales
+        const x = d3.scaleTime().range([0, width]);
+        const y = d3.scaleLinear().range([height, 0]);
+
+        // Create axes
+        const xAxis = svg.append("g")
+            .attr("transform", `translate(0,${height})`);
+        const yAxis = svg.append("g");
+
+        // Line generator
+        const line = d3.line()
+            .x(d => x(d.date))
+            .y(d => y(d.price));
+
+        // Add tooltip
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        // Format helpers
+        const formatDate = d3.timeFormat("%b %d, %Y");
+        const formatPrice = price => `₹${price.toFixed(2)}`;
+
+        // Function to update chart
+        function updateChart(data) {
+            const { price_spikes, price_dips } = data;
+
+            // Parse dates and merge datasets
+            price_spikes.forEach(d => d.date = new Date(d.date));
+            price_dips.forEach(d => d.date = new Date(d.date));
+
+            const combinedData = [...price_spikes, ...price_dips].sort((a, b) => a.date - b.date);
+
+            // Set scales
+            x.domain(d3.extent(combinedData, d => d.date));
+            y.domain([
+                d3.min(combinedData, d => d.price) * 0.99,
+                d3.max(combinedData, d => d.price) * 1.01
+            ]);
+
+            // Update axes
+            xAxis.call(d3.axisBottom(x));
+            yAxis.call(d3.axisLeft(y)
+            .tickFormat(d => `₹${d.toLocaleString()}`));
+
+            // Draw line
+            svg.selectAll(".price-line").remove();
+            svg.append("path")
+                .datum(combinedData)
+                .attr("class", "price-line")
+                .attr("fill", "none")
+                .attr("stroke", "#2196F3")
+                .attr("stroke-width", 2)
+                .attr("d", line);
+
+            // Add points for spikes
+            const spikePoints = svg.selectAll(".data-point-spike")
+                .data(price_spikes);
+
+            spikePoints.exit().remove();
+
+            spikePoints.enter()
+                .append("circle")
+                .attr("class", "data-point-spike")
+                .merge(spikePoints)
+                .attr("r", 4)
+                .attr("cx", d => x(d.date))
+                .attr("cy", d => y(d.price))
+                .attr("fill", "#2196F3")
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("r", 6);
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`
+                            <strong>Spike</strong><br/>
+                            Date: ${formatDate(d.date)}<br/>
+                            Price: ${formatPrice(d.price)}
+                        `)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("r", 4);
+                    tooltip.style("opacity", 0);
+                });
+
+            // Add points for dips
+            const dipPoints = svg.selectAll(".data-point-dip")
+                .data(price_dips);
+
+            dipPoints.exit().remove();
+            dipPoints.enter()
+                .append("circle")
+                .attr("class", "data-point-dip")
+                .merge(dipPoints)
+                .attr("r", 4)
+                .attr("cx", d => x(d.date))
+                .attr("cy", d => y(d.price))
+                .attr("fill", "#FF5722")
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("r", 6);
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`
+                            <strong>Dip</strong><br/>
+                            Date: ${formatDate(d.date)}<br/>
+                            Price: ${formatPrice(d.price)}
+                        `)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("r", 4);
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        document.getElementById("button").onclick = function () {
+        location.href = "{% url 'render_index' %}";
+    };
+
+        // Fetch data from the API
+        function fetchData() {
+            const url = "{% url 'token_metrics' %}"; // Replace with your API URL
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const parsedData = JSON.parse(data.chart_data);
+                    updateChart(parsedData);
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        // Initialize chart
+        fetchData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audace - Ethereum Price Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .heading {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            width: 800px;
+            height: 400px;
+            margin: 20px auto;
+        }
+        .line {
+            fill: none;
+            stroke: #2196F3;
+            stroke-width: 2;
+        }
+        .axis {
+            font-size: 12px;
+        }
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .data-point {
+            fill: #2196F3;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 1000;
+        }
+
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+
+        .input-row h3 {
+                flex-basis: 100%; 
+                margin-bottom: 20px; 
+                text-align: center; 
+        }
+        
+        .input-col {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .input-col:last-child {
+            margin-right: 0;
+        }
+
+        .metrics-button {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: right;
+            margin-top: 50px;
+        }
+
+        #button {
+            background-color: #FF5722;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 16px;
+            }
+
+    </style>
+</head>
+<body>
+    {% comment %} <div class="controls">
+        <select id="timeframe">
+            <option value="1h">1 Hour</option>
+            <option value="24h">24 Hours</option>
+            <option value="7d">7 Days</option>
+        </select>
+        <button id="refresh">Refresh Data</button>
+    </div> {% endcomment %}
+    <div class="heading"><h1>Audace - Ethereum Price Dashboard</h1></div>
+
+    <div class="row metrics-button">
+        <button id="button">Metrics chart</button>
+    </div>
+
+    <div class="heading"><h3>Volume changes in the past 24 hours</h3></div>
+    <div id="chart" class="chart-container"></div>
+    <div class="last-updated">Last updated: <span id="update-time">-</span></div>
+    <div class="tooltip"></div>
+
+    <div class="input-row">
+        <h3>Daily Averages</h3>
+        <div class="input-col">
+            <label for="avgPrice">Average Price: </label>
+            <input type="text" id="avgPrice" name="avgPrice">
+        </div>
+        <div class="input-col">
+            <label for="avgLiquidity">Liquidity: </label>
+            <input type="text" id="avgLiquidity" name="avgLiquidity">
+        </div>
+        <div class="input-col">
+            <label for="avgVolume">Volume: </label>
+            <input type="text" id="avgVolume" name="avgVolume">
+        </div>
+    </div>
+
+    <script>
+        const margin = {top: 20, right: 30, bottom: 30, left: 70};
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+        const UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+        let updateTimer;
+
+        // Create tooltip
+        const tooltip = d3.select(".tooltip");
+
+        // Create SVG container
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Initialize scales
+        const x = d3.scaleTime().range([0, width]);
+        const y = d3.scaleLinear().range([height, 0]);
+
+        // Add axes
+        const xAxis = svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(0,${height})`);
+
+        const yAxis = svg.append("g")
+            .attr("class", "axis");
+
+        // Add line path
+        const line = d3.line()
+            .x(d => x(new Date(d.date)))
+            .y(d => y(d.price));
+
+        const path = svg.append("path")
+            .attr("class", "line");
+
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            $("#update-time").text(timeString);
+        }
+        
+        function updateChart(data) {
+            // Parse dates
+            data.forEach(d => {
+                d.date = new Date(d.date);
+            });
+
+            // Update scales
+            x.domain(d3.extent(data, d => d.date));
+            y.domain([
+                d3.min(data, d => d.price) * 0.99,
+                d3.max(data, d => d.price) * 1.01
+            ]);
+
+            // Update axes
+            xAxis.call(d3.axisBottom(x));
+            yAxis.call(d3.axisLeft(y)
+                .tickFormat(d => `₹${d.toLocaleString()}`));
+
+            // Update line with transition
+            path.datum(data)
+                .transition()
+                .duration(750)
+                .attr("d", line);
+
+            // Update data points
+            const points = svg.selectAll(".data-point")
+                .data(data);
+
+            // Remove old points
+            points.exit().remove();
+
+            // Add new points
+            points.enter()
+                .append("circle")
+                .attr("class", "data-point")
+                .merge(points)
+                .attr("r", 4)
+                .attr("cx", d => x(d.date))
+                .attr("cy", d => y(d.price))
+                .on("mouseover", function(event, d) {
+                    d3.select(this)
+                        .attr("r", 6);
+                    
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`
+                            Date: ${formatDate(d.date)}<br/>
+                            Price: ${formatPrice(d.price)}
+                        `)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(this)
+                        .attr("r", 4);
+                    
+                    tooltip
+                        .style("opacity", 0);
+                });
+
+            updateLastUpdatedTime();
+        }
+
+        document.getElementById("button").onclick = function () {
+        location.href = "{% url 'token_chart' %}";
+    };
+
+        function startAutoUpdate() {
+            // Clear any existing timer
+            if (updateTimer) {
+                clearInterval(updateTimer);
+            }
+
+            // Initial fetch
+            fetchData();
+
+            // Set up periodic updates
+            updateTimer = setInterval(fetchData, UPDATE_INTERVAL);
+        }
+
+        function fetchData() {
+            const timeframe = $("#timeframe").val();
+            $.ajax({
+                url: `/chart/`,
+                data: {},
+                success: function(response) {
+                    updateChart(JSON.parse(response.chart_data));
+                    $('#avgPrice').val(response.averages.total_price + '₹');
+                    $('#avgLiquidity').val(response.averages.avg_liquidity);  // Ensure this key exists in your response
+                    $('#avgVolume').val(response.averages.avg_volume);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching data:", error);
+                }
+            });
+        }
+
+        // Handle visibility change to prevent background updates
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(updateTimer);
+            } else {
+                startAutoUpdate();
+            }
+        });
+
+        // Start the auto-update process
+        startAutoUpdate();
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (updateTimer) {
+                clearInterval(updateTimer);
+            }
+        });
+
+        function formatDate(date) {
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatPrice(price) {
+            return `₹ ${price.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+        }
+    </script>
+</body>
+</html>
